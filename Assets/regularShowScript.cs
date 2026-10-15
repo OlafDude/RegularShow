@@ -32,8 +32,9 @@ public class regularShowScript : MonoBehaviour
     private List<int> chosenCharIndex = new List<int>();
     private List<int> basePower = new List<int>();
     private List<int> modifiedPower = new List<int>();
-    private List<string> correctChars = new List<string>();
+    private List<int> correctChars = new List<int>();
     private int maxPower = 0; 
+    private string[] charNames = new string[]{"Benson","CJ","Don","Eileen","Gary","HFG","Maellard","Margaret","Mordecai","Muscle Man","Pam","Pops","Reginald","Rigby","Skips","Starla","Thomas"}; 
 
     //location options
     public Material[] locOptions;
@@ -49,28 +50,20 @@ public class regularShowScript : MonoBehaviour
     void Awake()
     {
         moduleId = moduleIdCounter++;
-        foreach (KMSelectable character in characters)
-        {
-            KMSelectable pressedCharacter = character;
-            character.OnInteract += delegate () { CharacterPress(pressedCharacter); return false; };
+        for (int i = 0; i < characters.Length; i++){
+            int j = i; 
+            characters[i].OnInteract += delegate () { CharacterPress(j); return false; };
         }
     }
 
     void Start()
     {
-        playVoid();
-        PickBoss();
-        PickCharacters();
-        PickLocation();
-        findBasePower();
-        modifyBasePower();
-        applySpecials();
-        pickCorrect();
+        StartCoroutine(NewStage());
     }
 
 
 
-    void CharacterPress(KMSelectable character)
+    void CharacterPress(int i)
     {
         if (moduleSolved == true || waiting == true)
         {
@@ -78,17 +71,18 @@ public class regularShowScript : MonoBehaviour
         }
         else
         {
-            character.AddInteractionPunch(1f);
-            if (correctChars.Contains(character.GetComponent<MeshRenderer>().material.name))
+            StartCoroutine(ButtonPress(i));
+            characters[i].AddInteractionPunch(1f);
+            if (correctChars.Contains(i))
             {
-                Debug.LogFormat("Regular Show #{0}: Correct Press", moduleId);
+                Debug.LogFormat("[Regular Show #{0}] Correctly pressed {1}.", moduleId, charNames[chosenCharIndex[i]]);
                 stage++;
                 if (stage == 3)
                 {
                     moduleSolved = true;
                     waiting = true;
                     StartCoroutine(Solved());
-                    Debug.LogFormat("Regular Show #{0}: Module is solved. Yeeeuhhhh!", moduleId);
+                    Debug.LogFormat("[Regular Show #{0}] Module is solved. Yeeeuhhhh!", moduleId);
                 }
                 else
                 {
@@ -102,7 +96,7 @@ public class regularShowScript : MonoBehaviour
             }
             else
             {
-                Debug.LogFormat("Regular Show #{0}: Incorrect Press", moduleId);
+                Debug.LogFormat("[Regular Show #{0}] Incorrectly Pressed {1}.", moduleId, charNames[chosenCharIndex[i]]);
                 waiting = true;
                 StartCoroutine(Strike());
             }      
@@ -130,8 +124,77 @@ public class regularShowScript : MonoBehaviour
         GetComponent<KMBombModule>().HandlePass();
     }
 
-    void PickBoss()
-    {
+    IEnumerator NewStage(){
+        while(waiting){
+            yield return null; 
+        }
+        waiting = true; 
+        int t = 0; 
+        int x = 0; 
+        int _x = 0; 
+        int[] y = new int[3]; 
+        int[] _y = new int[3]; 
+        float wait = 0.04f; 
+		float _wait = 0.02f; 
+        while (t < 10){
+            _x = UnityEngine.Random.Range(0,8);
+            while (_x == x){
+                _x = UnityEngine.Random.Range(0,8);
+            }
+            x = _x; 
+            locPic.material = locOptions[x]; 
+            _x = UnityEngine.Random.Range(0,bossOptions.Length);
+            while (_x == x){
+                _x = UnityEngine.Random.Range(0,bossOptions.Length);
+            }
+            x = _x; 
+            bossPic.material = bossOptions[x];
+            for (int i = 0; i < 3; i++){
+                _y[i] = UnityEngine.Random.Range(0, charOptions.Length); 
+            }
+            for (int i = 0; i < 3; i++){
+                while (y[i]==_y[i]){
+                    _y[i] = UnityEngine.Random.Range(0, charOptions.Length); 
+                }
+                y[i] = _y[i]; 
+                characterMats[i].material = charOptions[y[i]];
+                characterPics[i].material = charOptions[y[i]];
+            }
+            wait+=_wait; 
+            yield return new WaitForSeconds(wait); 
+            t++;
+            
+        }
+        waiting = false; 
+        playVoid();
+        PickBoss();
+        PickCharacters();
+        PickLocation();
+        findBasePower();
+        modifyBasePower();
+        applySpecials();
+        pickCorrect();
+        yield break; 
+    }
+
+    IEnumerator ButtonPress(int i){
+        waiting = true; 
+		int it = 0; 
+		while (it < 16){
+			characters[i].gameObject.GetComponentInParent<Transform>().transform.localPosition += new Vector3(0, -0.0002f);
+			it++; 
+			yield return new WaitForSeconds(0.001f); 
+		}
+		while (it < 48){
+			characters[i].gameObject.GetComponentInParent<Transform>().transform.localPosition -= new Vector3(0, -0.0001f);
+			it++; 
+			yield return new WaitForSeconds(0.001f); 
+		}
+        waiting = false; 
+		yield break; 
+	}
+
+    void PickBoss(){
         bossIndex = UnityEngine.Random.Range(0, bossOptions.Length);
         while (chosenBossIndex.Contains(bossIndex))
         {
@@ -155,16 +218,6 @@ public class regularShowScript : MonoBehaviour
             characterMats[i].material = charOptions[index];
             characterPics[i].material = charOptions[index];
         }    
-        
-        /*/chosenCharIndex.Add(1);
-        chosenCharIndex.Add(8);
-        chosenCharIndex.Add(7);
-        characterMats[0].material = charOptions[1];
-        characterMats[1].material = charOptions[8];
-        characterMats[2].material = charOptions[7];
-        characterPics[0].material = charOptions[1];
-        characterPics[1].material = charOptions[8];
-        characterPics[2].material = charOptions[7]; /*/
 
         Debug.LogFormat("[Regular Show #{0}] Characters are: {1}, {2}, and {3}", moduleId, charOptions[chosenCharIndex[0]].name, charOptions[chosenCharIndex[1]].name, charOptions[chosenCharIndex[2]].name);
     }
@@ -592,21 +645,21 @@ public class regularShowScript : MonoBehaviour
     {
         if (locIndex == 4 && (bomb.GetSerialNumberNumbers().Sum() < 7 || bomb.GetSolvableModuleIDs().Any( x => x == "sun" || x == "moon")))
         {
-            Debug.LogFormat("Regular Show #{0}: Moon special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] Moon special condition is true!", moduleId);
         }
         if (bossIndex == 0 && chosenCharIndex.Contains(11))
         {
-            Debug.LogFormat("Regular Show #{0}: Pops special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] Pops/Antipops special condition is true!", moduleId);
         }
         if (chosenCharIndex.Contains(0) && chosenCharIndex.Contains(8) && chosenCharIndex.Contains(13) && (bomb.GetSerialNumber().Any(x => x == 'F' || x == 'R' || x == 'D' || x == 1 || x == 3)))
         {
             modifiedPower[8] = 0;
             modifiedPower[13] = 0; 
-            Debug.LogFormat("Regular Show #{0}: Fired special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] Fired special condition is true!", moduleId);
         }
         if (bossIndex == 5 && bomb.IsIndicatorOn("BOB"))
         {
-            Debug.LogFormat("Regular Show #{0}: BOB special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] BOB/GBF special condition is true!", moduleId);
             for (int i = 0; i<= 2; i++)
             {
                 modifiedPower[chosenCharIndex[i]] = basePower[chosenCharIndex[i]];
@@ -614,7 +667,7 @@ public class regularShowScript : MonoBehaviour
         }
         if (bossIndex == 2 && locIndex == 0 && bomb.GetSolvableModuleIDs().Any(x => x == "coffeebucks"))
         {
-            Debug.LogFormat("Regular Show #{0}: Coffee special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] Coffee special condition is true!", moduleId);
             modifiedPower[1] = modifiedPower[1] - 5;
             modifiedPower[3] = modifiedPower[3] - 5;
             modifiedPower[7] = modifiedPower[7] - 5;
@@ -622,17 +675,17 @@ public class regularShowScript : MonoBehaviour
         }
         if (bossIndex == 4 && chosenCharIndex.Contains(13) && bomb.GetSolvableModuleIDs().Any(x => x == "londonUnderground" || x == "britishSlang"))
         {
-            Debug.LogFormat("Regular Show #{0}: British special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] Bri-ish special condition is true!", moduleId);
         }
         if ((bossIndex == 8 && bomb.GetSolvableModuleIDs().Any(x => x == "soda")) || (bossIndex == 11 && bomb.GetSolvableModuleIDs().Any(x => x == "mirror")))
         {
-            Debug.LogFormat("Regular Show #{0}: Missing Boss special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] Missing Boss special condition is true!", moduleId);
             modifiedPower = new List<int> { 1, 1, 1 };
         }
         if (chosenCharIndex.Contains(1) && chosenCharIndex.Contains(7) && chosenCharIndex.Contains(8))
         {
             modifiedPower[8] = 0;
-            Debug.LogFormat("Regular Show #{0}: Simp special triggered", moduleId);
+            Debug.LogFormat("[Regular Show #{0}] The simp special condition is true!", moduleId);
         }
         Debug.LogFormat("[Regular Show #{0}] Special Modified Powers are: {1}, {2}, and {3}", moduleId, modifiedPower[chosenCharIndex[0]], modifiedPower[chosenCharIndex[1]], modifiedPower[chosenCharIndex[2]]);
     }
@@ -647,7 +700,7 @@ public class regularShowScript : MonoBehaviour
             {
                 if (modifiedPowerChosen[i] == maxPower)
                 {
-                    correctChars.Add(characterMats[i].material.name);
+                    correctChars.Add(i);
                 }
             }
         }
@@ -658,19 +711,24 @@ public class regularShowScript : MonoBehaviour
             {
                 if (modifiedPowerChosen[i] == maxPower)
                 {
-                    correctChars.Add(characterMats[i].material.name);
+                    correctChars.Add(i);
                 }
             }
         }
         if (bossIndex == 4 && chosenCharIndex.Contains(13))
         {
-            correctChars = new List<string>{"Rigby (Instance)"};
+            correctChars = new List<int>{chosenCharIndex.IndexOf(13)};
+
         }
         if (bossIndex == 0 && chosenCharIndex.Contains(11))
         {
-            correctChars = new List<string> {"Pops (Instance)"};
+            correctChars = new List<int> {chosenCharIndex.IndexOf(11)};
         }
-        Debug.LogFormat("Regular Show #{0}: Correct characters are: {1}", moduleId, string.Join(",",correctChars.ToArray()));
+        List<string> finalStatement = new List<string>(); 
+        for (int i = 0; i < correctChars.Count; i++){
+            finalStatement.Add(charNames[chosenCharIndex[correctChars[i]]]);
+        }
+        Debug.LogFormat("[Regular Show #{0}] Correct character(s) are: {1}", moduleId, string.Join(" or ",finalStatement.ToArray()));
     }
 
     void playVoid()
@@ -678,5 +736,98 @@ public class regularShowScript : MonoBehaviour
         if (playedVoid == false)
         { Audio.PlaySoundAtTransform("void", transform); playedVoid = true; }
     }
+
+    // Twitch Plays by ItsOlafDude
+
+#pragma warning disable 414
+	private readonly string TwitchHelpMessage = @"Type in !{0} top/t/1 to press the top button, middle/mid/m/2 to press the middle button, and bottom/bot/b/3 to press the bottom button";
+#pragma warning restore 414
+
+	IEnumerator ProcessTwitchCommand(string command)
+	{
+		string[] split = command.ToUpperInvariant().Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+
+		if (waiting)
+		{
+			yield return "sendtochaterror Please wait until the animation has ended.";
+			yield break;
+		}
+
+		switch (split[0])
+		{
+			case "T":
+			case "TOP":
+			case "M":
+			case "MID":
+			case "MIDDLE":
+			case "B":
+            case "BOT":
+            case "BOTTOM":
+            case "1":
+            case "2":
+            case "3":
+				if (split.Length > 1)
+				{
+					yield return "sendtochaterror Only use 1 parameter in your command please!";
+					yield break;
+				}
+
+				if (new string[]{ "T", "TOP", "1"}.Contains(split[0])){
+                    yield return new WaitForSeconds(0.015f);
+                    if (!correctChars.Contains(0)){
+                        yield return "strike"; 
+                    }
+                    else if (stage == 2){
+                        yield return "solve"; 
+                    }
+                    characters[0].OnInteract(); 
+                    
+                }
+                if(new string[]{ "M", "MID", "MIDDLE", "2"}.Contains(split[0])){
+                    yield return new WaitForSeconds(0.015f);
+                    if (!correctChars.Contains(1)){
+                        yield return "strike"; 
+                    }
+                    else if (stage == 2){
+                        yield return "solve"; 
+                    }
+                    characters[1].OnInteract(); 
+                }
+                if(new string[]{ "B", "BOT", "BOTTOM", "3"}.Contains(split[0])){
+                    yield return new WaitForSeconds(0.015f); 
+                    if (!correctChars.Contains(2)){
+                        yield return "strike"; 
+                    }
+                    else if (stage == 2){
+                        yield return "solve"; 
+                    }
+                    characters[2].OnInteract(); 
+                }
+				yield break;
+			default:
+				yield return "sendtochaterror Command not recognized.";
+				yield break;
+		}
+	}
+
+	IEnumerator TwitchHandleForcedSolve()
+	{
+		while (waiting)
+		{
+			if (moduleSolved)
+				yield break;
+
+			yield return true;
+		}
+        yield return "solve"; 
+		while (!moduleSolved)
+		{   
+            yield return new WaitForSeconds(0.015f);
+			characters[correctChars[0]].OnInteract();
+			yield return new WaitForSeconds(0.1f);
+			while (waiting)
+				yield return true;
+		}
+	}
 }
 

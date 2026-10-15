@@ -14,8 +14,10 @@ MonoBehaviour:
   id: regularShow
   title: Regular Show
   author: ItsOlafDude
-  description: "Regular Show \nBy ItsOlafDude\n\nYou know who else is one button away
-    from exploding? \n\nModule ID: regularShow"
-  version: 1.0
+  description: "Regular Show\r\nBy ItsOlafDude\r\n\r\n\"You know who else is one button
+    away from exploding?\"\r\n\r\nChoose the right character to fight each boss depending
+    on location, other characters, and edgework.\r\n\r\nInspired by the greatest tv
+    show of all time.\r\n\r\nModule ID: regularShow\r\n\r\nManual available at:\r\nhttps://ktane.timwi.de/HTML/Regular%20Show.html"
+  version: 1.2
   outputFolder: build
   previewImage: {fileID: 2800000, guid: db03e205b7da8bf40913790431f6d87c, type: 3}
